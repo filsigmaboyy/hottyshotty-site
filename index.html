@@ -34,30 +34,83 @@
             border-radius: 12px; 
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
-        .post-title { 
+        .post-title-link { 
             color: #e11d48; 
+            text-decoration: none;
             margin-top: 0; 
             margin-bottom: 12px; 
             font-size: 24px; 
             font-weight: bold;
+            display: inline-block;
         }
+        .post-title-link:hover { text-decoration: underline; }
         .post-body { color: #94a3b8; font-size: 16px; line-height: 1.6; }
+        .loading-state, .empty-state { text-align: center; color: #64748b; padding: 40px; font-size: 16px; }
+        .error-state { text-align: center; color: #ef4444; padding: 40px; font-size: 16px; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="main-title">Hottyshotty Live Site</div>
 
-        <div class="post-card">
-            <div class="post-title">Welcome to Wapka</div>
-            <div class="post-body">Bhai, Static Site via GitHub pipeline active ho chuka hai!</div>
+        <div id="posts-container">
+            <div class="loading-state">Posts load ho rahi hain, kripya prateeksha karein...</div>
         </div>
-
-        <div class="post-card">
-            <div class="post-title">mnbnmb</div>
-            <div class="post-body">Ab aap bina kisi error ke mast HTML aur CSS customize kar sakte ho.</div>
-        </div>
-
     </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Static API endpoint to query forum posts for your exact forum 29070
+            const apiUrl = '/v1/forums/posts/list?forum_id=29070&limit=10&status=1&order=id_desc';
+            const container = document.getElementById('posts-container');
+
+            fetch(apiUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response sahi nahi tha');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    container.innerHTML = ''; // Loading state ko saaf karne ke liye
+
+                    // Check if data is a direct array or wrapped inside items object
+                    const posts = Array.isArray(data) ? data : (data.items || []);
+
+                    if (posts.length === 0) {
+                        container.innerHTML = `
+                            <div class="post-card">
+                                <div class="empty-state">Bhai, forum me abhi koi active posts nahi miliyan!</div>
+                            </div>`;
+                        return;
+                    }
+
+                    // Loop through each post from admin dashboard and append to HTML
+                    posts.forEach(post => {
+                        const title = post.title || 'Untitled Post';
+                        const content = post.content || post.body || '';
+                        const id = post.id || '';
+
+                        const postHtml = `
+                            <div class="post-card">
+                                <h2><a href="/forums/29070/post/${id}" class="post-title-link">${title}</a></h2>
+                                <div class="post-body">${content}</div>
+                            </div>
+                        `;
+                        container.innerHTML += postHtml;
+                    });
+                })
+                .catch(error => {
+                    console.error('Fetch error:', error);
+                    container.innerHTML = `
+                        <div class="post-card">
+                            <div class="error-state">
+                                <strong>Connection Error!</strong><br>
+                                API se posts fetch nahi ho payi. Ek baar check karein endpoint settings.
+                            </div>
+                        </div>`;
+                });
+        });
+    </script>
 </body>
 </html>
