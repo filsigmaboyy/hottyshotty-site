@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hottyshotty API Debug Split Test</title>
+    <title>Hottyshotty Accurate API Test</title>
     <style>
         body { 
             background-color: #0f172a; 
@@ -12,7 +12,7 @@
             padding: 20px; 
             margin: 0;
         }
-        .container { max-width: 900px; margin: 0 auto; }
+        .container { max-width: 700px; margin: 0 auto; }
         .main-title { 
             text-align: center; 
             color: white; 
@@ -26,119 +26,81 @@
             margin-bottom: 30px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
-        .split-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-        @media (max-width: 768px) {
-            .split-grid { grid-template-columns: 1fr; }
-        }
-        .column-title {
-            font-size: 20px;
-            font-weight: bold;
-            padding: 10px;
-            margin-bottom: 15px;
-            border-bottom: 3px solid #334155;
-            text-transform: uppercase;
-        }
-        .col-forum { color: #38bdf8; border-color: #38bdf8 !important; }
-        .col-global { color: #f43f5e; border-color: #f43f5e !important; }
-        
         .post-card { 
             background: #1e293b; 
             border: 1px solid #334155; 
-            padding: 20px; 
-            margin-bottom: 15px; 
-            border-radius: 10px; 
+            padding: 25px; 
+            margin-bottom: 20px; 
+            border-radius: 12px; 
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
         .post-title-link { 
-            color: #ffffff; 
+            color: #e11d48; 
             text-decoration: none;
             margin-top: 0; 
-            margin-bottom: 10px; 
-            font-size: 20px; 
+            margin-bottom: 12px; 
+            font-size: 24px; 
             font-weight: bold;
             display: inline-block;
         }
         .post-title-link:hover { text-decoration: underline; }
-        .post-body { color: #94a3b8; font-size: 14px; line-height: 1.5; }
-        .state-text { text-align: center; color: #64748b; padding: 20px; font-size: 14px; }
-        .error-state { color: #ef4444; font-weight: bold; }
-        .success-state { color: #10b981; font-weight: bold; }
+        .post-body { color: #94a3b8; font-size: 16px; line-height: 1.6; }
+        .state-text { text-align: center; color: #64748b; padding: 40px; font-size: 16px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="main-title">Hottyshotty API Split Test</div>
+        <div class="main-title">Hottyshotty Live Site</div>
 
-        <div class="split-grid">
-            
-            <div>
-                <div class="column-title col-forum">Test 1: Forum ID Filter (29070)</div>
-                <div id="forum-container">
-                    <div class="state-text">Forum ID se fetch karne ki koshish chal rahi hai...</div>
-                </div>
-            </div>
-
-            <div>
-                <div class="column-title col-global">Test 2: Global Fetch (Bina ID)</div>
-                <div id="global-container">
-                    <div class="state-text">Bina filter ke fetch karne ki koshish chal rahi hai...</div>
-                </div>
-            </div>
-
+        <div id="posts-container">
+            <div class="state-text">New Convention API se posts fetch ho rahi hain...</div>
         </div>
     </div>
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            // Helper function to render data inside columns
-            function renderPosts(elementId, posts, fallbackMsg) {
-                const container = document.getElementById(elementId);
-                container.innerHTML = '';
+            // Tumhare bhejey gaye naye document ke mutabik exact path: /api/get/posts
+            // Proxy use ho raha hai isliye yeh piche se web.wapka.org/v1/get/posts banega
+            const apiUrl = '/api/get/posts?forum_id=29070&limit=10&status=1&order=id_desc';
+            const container = document.getElementById('posts-container');
 
-                if (posts.length === 0) {
-                    container.innerHTML = `<div class="post-card"><div class="state-text">${fallbackMsg}</div></div>`;
-                    return;
-                }
+            fetch(apiUrl)
+                .then(res => res.json())
+                .then(data => {
+                    container.innerHTML = '';
+                    
+                    // Resolving response structure
+                    const posts = Array.isArray(data) ? data : (data.items || []);
 
-                posts.forEach(post => {
-                    container.innerHTML += `
+                    if (posts.length === 0) {
+                        container.innerHTML = `
+                            <div class="post-card">
+                                <div class="state-text">
+                                    <strong>API Connected! Path target: /api/get/posts</strong><br>
+                                    Lekin Forum ID 29070 me koi posts active nahi mili. Ek baar admin me check karo ki kya post ka forum_id yahi hai?
+                                </div>
+                            </div>`;
+                        return;
+                    }
+
+                    posts.forEach(post => {
+                        container.innerHTML += `
+                            <div class="post-card">
+                                <h2><a href="#" class="post-title-link">${post.title || 'Untitled'}</a></h2>
+                                <div class="post-body">${post.content || post.body || ''}</div>
+                            </div>
+                        `;
+                    });
+                })
+                .catch(err => {
+                    console.error(err);
+                    container.innerHTML = `
                         <div class="post-card">
-                            <h2><a href="#" class="post-title-link">${post.title || 'Untitled Post'}</a></h2>
-                            <div class="post-body">${post.content || post.body || 'No content'}</div>
-                            <div style="font-size: 11px; color:#475569; margin-top:10px;">ID: ${post.id || 'N/A'} | Forum: ${post.forum_id || 'N/A'}</div>
-                        </div>
-                    `;
-                });
-            }
-
-            // --- CALL 1: WITH FORUM ID FILTER ---
-            const forumUrl = '/api/forums/posts/list?forum_id=29070&limit=10&status=1';
-            fetch(forumUrl)
-                .then(res => res.json())
-                .then(data => {
-                    const posts = Array.isArray(data) ? data : (data.items || []);
-                    renderPosts('forum-container', posts, '<span class="success-state">API Connected!</span><br>Lekin is Forum ID (29070) me koi posts active nahi mili.');
-                })
-                .catch(err => {
-                    console.error(err);
-                    document.getElementById('forum-container').innerHTML = `<div class="post-card"><div class="state-text error-state">Test 1 Failed: Network/Proxy issue!</div></div>`;
-                });
-
-            // --- CALL 2: GLOBAL FETCH (NO FILTER) ---
-            const globalUrl = '/api/forums/posts/list?limit=10&status=1';
-            fetch(globalUrl)
-                .then(res => res.json())
-                .then(data => {
-                    const posts = Array.isArray(data) ? data : (data.items || []);
-                    renderPosts('global-container', posts, '<span class="success-state">API Connected!</span><br>Lekin pure account me koi posts nahi mili.');
-                })
-                .catch(err => {
-                    console.error(err);
-                    document.getElementById('global-container').innerHTML = `<div class="post-card"><div class="state-text error-state">Test 2 Failed: Network/Proxy issue!</div></div>`;
+                            <div class="state-text" style="color: #ef4444;">
+                                <strong>API Connection Error!</strong><br>
+                                Ek baar check karo ki tumhare Access Control panel me 'get/posts' ke samne 'Public' par green tick ya select hai ya nahi.
+                            </div>
+                        </div>`;
                 });
         });
     </script>
